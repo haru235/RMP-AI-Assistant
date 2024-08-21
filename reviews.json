@@ -1,0 +1,125 @@
+{
+    "reviews": [
+      {
+        "professor": "Dr. Alice Johnson",
+        "subject": "Computer Science",
+        "stars": 4,
+        "review": "Great professor with clear lectures, but sometimes a bit too fast-paced."
+      },
+      {
+        "professor": "Prof. Mark Spencer",
+        "subject": "Mathematics",
+        "stars": 5,
+        "review": "Excellent at explaining complex topics and always available for help."
+      },
+      {
+        "professor": "Dr. Emily Clark",
+        "subject": "Physics",
+        "stars": 3,
+        "review": "Knowledgeable but not very engaging during lectures."
+      },
+      {
+        "professor": "Dr. James Roberts",
+        "subject": "Chemistry",
+        "stars": 2,
+        "review": "The course was challenging, but the professor didn't provide enough support."
+      },
+      {
+        "professor": "Prof. Sarah Miller",
+        "subject": "History",
+        "stars": 4,
+        "review": "Interesting lectures, though sometimes assignments are unclear."
+      },
+      {
+        "professor": "Dr. William Brown",
+        "subject": "Biology",
+        "stars": 5,
+        "review": "Engaging and enthusiastic, makes the subject fascinating."
+      },
+      {
+        "professor": "Prof. Linda Davis",
+        "subject": "Literature",
+        "stars": 3,
+        "review": "Good professor, but grading is quite harsh."
+      },
+      {
+        "professor": "Dr. Richard Wilson",
+        "subject": "Philosophy",
+        "stars": 4,
+        "review": "Thought-provoking lectures but can be difficult to follow at times."
+      },
+      {
+        "professor": "Prof. Nancy White",
+        "subject": "Psychology",
+        "stars": 5,
+        "review": "Very supportive and provides great feedback on assignments."
+      },
+      {
+        "professor": "Dr. Michael Harris",
+        "subject": "Economics",
+        "stars": 2,
+        "review": "Lectures are dry and the professor is not very approachable."
+      },
+      {
+        "professor": "Prof. Jessica Thompson",
+        "subject": "Sociology",
+        "stars": 4,
+        "review": "Cares about students' learning but sometimes too lenient with grading."
+      },
+      {
+        "professor": "Dr. David Moore",
+        "subject": "Engineering",
+        "stars": 3,
+        "review": "Good content but lacks real-world application in assignments."
+      },
+      {
+        "professor": "Prof. Barbara Jackson",
+        "subject": "Political Science",
+        "stars": 5,
+        "review": "Passionate about the subject and creates a great classroom environment."
+      },
+      {
+        "professor": "Dr. John Martin",
+        "subject": "Anthropology",
+        "stars": 3,
+        "review": "Interesting lectures, but the exams are tough."
+      },
+      {
+        "professor": "Prof. Elizabeth Lee",
+        "subject": "Art History",
+        "stars": 4,
+        "review": "Very knowledgeable, but sometimes goes off-topic during lectures."
+      },
+      {
+        "professor": "Dr. Robert Thompson",
+        "subject": "Environmental Science",
+        "stars": 5,
+        "review": "Incredible professor with a passion for sustainability. Highly recommend."
+      },
+      {
+        "professor": "Prof. Charles Anderson",
+        "subject": "Music",
+        "stars": 4,
+        "review": "Engaging and makes learning music theory fun, though assignments are tough."
+      },
+      {
+        "professor": "Dr. Patricia Thomas",
+        "subject": "Nursing",
+        "stars": 5,
+        "review": "Very supportive and always provides practical examples in class."
+      },
+      {
+        "professor": "Prof. George Walker",
+        "subject": "Business Administration",
+        "stars": 2,
+        "review": "Lectures are unorganized, and the professor doesn't respond to emails."
+      },
+      {
+        "professor": "Dr. Karen Hall",
+        "subject": "Education",
+        "stars": 4,
+        "review": "Great at teaching pedagogy but tends to focus too much on theory."
+      }
+    ]
+  }
+  
