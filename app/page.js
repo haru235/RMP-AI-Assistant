@@ -16,14 +16,16 @@ export default function Home() {
   const [message, setMessage] = useState("");
 
   const test = async () => {
-    const url = 'https://www.ratemyprofessors.com/professor/835373'
+    const url = 'https://www.ratemyprofessors.com/professor/83573'
     const response = await fetch("/api/scrape", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({url}),
-    }).then(async (res) => {});
+      body: JSON.stringify({url: url, max: 5}),
+    }).then(async (res) => {
+
+    });
   };
 
   const sendMessage = async () => {

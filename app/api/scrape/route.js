@@ -1,9 +1,13 @@
 import puppeteer from "puppeteer";
 import { NextResponse } from "next/server";
+import { Pinecone } from "@pinecone-database/pinecone";
+import OpenAI from "openai";
 
 export async function POST(req) {
-  const { url } = await req.json();
+  // url of professor's page
+  const { url, max } = await req.json();
   console.log(`Received URL: ${url}`);
+  console.log(`Max reviews: ${max}`);
 
   let browser;
 
@@ -26,12 +30,15 @@ export async function POST(req) {
       timeout: 5000,
     });
 
+    // RMP shows a popup on first open
     console.log("Checking for cookie consent popup...");
     try {
+      // find the close button
       await page.waitForSelector(
         ".Buttons__Button-sc-19xdot-1.CCPAModal__StyledCloseButton-sc-10x9kq-2.eAIiLw",
         { timeout: 5000 }
       );
+      // click the button
       console.log("Cookie consent popup detected. Accepting...");
       await page.click(
         ".Buttons__Button-sc-19xdot-1.CCPAModal__StyledCloseButton-sc-10x9kq-2.eAIiLw"
@@ -45,9 +52,11 @@ export async function POST(req) {
     console.log("Extracting professor information...");
     const profInfo = await page.evaluate(() => {
       try {
-        const nameElem = document.querySelector(
-          ".NameTitle__LastNameWrapper-dowf0z-2.glXOHH"
-        ).textContent;
+        let nameElem = document.querySelector(".NameTitle__Name-dowf0z-0.cfjPUG span")?.textContent.trim() || "Unknown"
+        nameElem += ' ' +
+          document
+            .querySelector(".NameTitle__LastNameWrapper-dowf0z-2.glXOHH")
+            ?.textContent.trim() || "Unknown";
         const starsElem = document.querySelector(
           ".RatingValue__Numerator-qw8sqy-2.liyUjw"
         ).textContent;
@@ -91,16 +100,15 @@ export async function POST(req) {
         console.log("Ratings list found. Scraping reviews...");
 
         // Scrape reviews on the current page
-        const newReviews = await page.evaluate(() => {
+        const newReviews = await page.evaluate((currLength, max) => {
           const reviewElements = document.querySelectorAll(
             ".Rating__RatingBody-sc-1rhvpxz-0.dGrvXb"
           );
 
-          return Array.from(reviewElements).map((review) => {
-            const professor =
-              document
-                .querySelector(".NameTitle__LastNameWrapper-dowf0z-2.glXOHH")
-                ?.textContent.trim() || "Unknown";
+          if (currLength >= max) 
+            return 
+
+          return Array.from(reviewElements).slice(currLength, max).map((review) => {
             const content =
               review
                 .querySelector(".Comments__StyledComments-dzzyvm-0.gRjWel")
@@ -119,25 +127,25 @@ export async function POST(req) {
                 ?.textContent.trim() || "No rating";
 
             return {
-              professor,
               content,
               quality: parseInt(quality, 10) || 0,
               difficulty: parseInt(difficulty, 10) || 0,
             };
           });
-        });
+        }, reviews.length, max);
 
         // Append new reviews to the list
         if (newReviews.length > 0) {
-            const currLength = reviews.length
-          reviews.push(...newReviews.slice(currLength));
+          reviews.push(...newReviews);
           console.log(
-            `Added ${newReviews.length - currLength} reviews. Total reviews: ${reviews.length}`
+            `Added ${newReviews.length} reviews. Total reviews: ${reviews.length}`
           );
         } else {
           console.log("No new reviews found on this page.");
           break; // Exit the loop if no reviews are found
         }
+
+        if (reviews.length >= max) break;
 
         // Try to find the "Load More" button and click it
         const loadMoreButton = await page.$(
@@ -164,8 +172,10 @@ export async function POST(req) {
     console.log("Scraping complete. Total reviews:", reviews.length);
     console.log("Sample review:", reviews[0]);
 
+    insertIntoPinecone(reviews, profInfo)
+
     // Return the extracted information
-    return new NextResponse(JSON.stringify({ profInfo, reviews }), { status: 200 });
+    return new NextResponse(JSON.stringify({ profInfo }), { status: 200 });
   } catch (err) {
     console.error("An error occurred:", err.message);
     return new NextResponse("Error", { status: 500 });
@@ -176,4 +186,32 @@ export async function POST(req) {
       await browser.close();
     }
   }
+}
+
+async function insertIntoPinecone(reviews, profInfo) {
+  const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY })
+  const openai = new OpenAI()
+  const processed_reviews = []
+  for (const [index, review] of reviews.entries()) {
+    const embedding = await generateEmbeddings(review, openai);
+    processed_reviews.push({
+      id: `${profInfo.name}-${index}`,
+      values: embedding,
+      metadata: {
+        review: review.content,
+        subject: profInfo.dept,
+        stars: review.quality,
+      },
+    });
+  }
+  await pc.index('rag').namespace("ns2").upsert(processed_reviews);
+}
+
+async function generateEmbeddings(review, openai) {
+  const response = await openai.embeddings.create({
+    model: "text-embedding-3-small",
+    input: review.content,
+    encoding_format: 'float',
+  })
+  return response.data[0].embedding
 }
