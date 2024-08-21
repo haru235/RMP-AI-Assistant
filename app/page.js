@@ -14,18 +14,22 @@ export default function Home() {
     },
   ]);
   const [message, setMessage] = useState("");
+  const [professorUrl, setProfessorUrl] = useState("");
 
   const test = async () => {
-    const url = 'https://www.ratemyprofessors.com/professor/83573'
-    const response = await fetch("/api/scrape", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({url: url, max: 5}),
-    }).then(async (res) => {
-
-    });
+    if (professorUrl.startsWith('https://www.ratemyprofessors.com/professor/')) {
+      setProfessorUrl('')
+      const url = 'https://www.ratemyprofessors.com/professor/835373'
+      const response = await fetch("/api/scrape", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ url: url, max: 5 }),
+      })
+    } else {
+      console.log('Invalid professor url');
+    }
   };
 
   const sendMessage = async () => {
@@ -163,14 +167,37 @@ export default function Home() {
           </Button>
         </Stack>
       </Stack>
-      <Button
-        variant="contained"
-        size="large"
-        sx={{ whiteSpace: "nowrap", flexShrink: 0 }} // Ensured the button doesn't shrink
-        onClick={test}
+      <Stack
+        spacing={2}
+        sx={{
+          width: "100%",
+          maxWidth: { xs: "100%", sm: "300px" }, // Adjust width for responsiveness
+          height: "auto",
+          border: "1px solid",
+          borderColor: "divider",
+          borderRadius: 2,
+          p: 2,
+          boxShadow: 3,
+          backgroundColor: "background.paper", // Consistent with theme
+        }}
       >
-        Test
-      </Button>
+        <TextField
+          label="Enter some text..."
+          variant="outlined"
+          fullWidth
+          sx={{ backgroundColor: "background.paper" }} // Consistent input background
+          value={professorUrl}
+          onChange={(e) => setProfessorUrl(e.target.value)}
+        />
+        <Button
+          variant="contained"
+          size="large"
+          sx={{ whiteSpace: "nowrap", flexShrink: 0 }} // Ensured the button doesn't shrink
+          onClick={test}
+        >
+          Test
+        </Button>
+      </Stack>
     </Box>
   );
 }

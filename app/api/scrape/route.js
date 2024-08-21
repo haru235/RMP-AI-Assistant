@@ -105,8 +105,8 @@ export async function POST(req) {
             ".Rating__RatingBody-sc-1rhvpxz-0.dGrvXb"
           );
 
-          if (currLength >= max) 
-            return 
+          if (currLength >= max)
+            return
 
           return Array.from(reviewElements).slice(currLength, max).map((review) => {
             const content =
@@ -193,14 +193,18 @@ async function insertIntoPinecone(reviews, profInfo) {
   const openai = new OpenAI()
   const processed_reviews = []
   for (const [index, review] of reviews.entries()) {
-    const embedding = await generateEmbeddings(review, openai);
+    const embedText = `${profInfo.name} at ${profInfo.school} for ${profInfo.dept}: ${review.content}`
+    const embedding = await generateEmbeddings(embedText, openai);
     processed_reviews.push({
-      id: `${profInfo.name}-${index}`,
+      id: `${profInfo.name}-${profInfo.school}-${index}`,
       values: embedding,
       metadata: {
         review: review.content,
         subject: profInfo.dept,
         stars: review.quality,
+        prof: profInfo.name,
+        dept: profInfo.dept,
+        school: profInfo.school,
       },
     });
   }
@@ -210,7 +214,7 @@ async function insertIntoPinecone(reviews, profInfo) {
 async function generateEmbeddings(review, openai) {
   const response = await openai.embeddings.create({
     model: "text-embedding-3-small",
-    input: review.content,
+    input: review,
     encoding_format: 'float',
   })
   return response.data[0].embedding
