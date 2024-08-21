@@ -15,6 +15,17 @@ export default function Home() {
   ]);
   const [message, setMessage] = useState("");
 
+  const test = async () => {
+    const url = 'https://www.ratemyprofessors.com/professor/835373'
+    const response = await fetch("/api/scrape", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({url}),
+    }).then(async (res) => {});
+  };
+
   const sendMessage = async () => {
     setMessages((messages) => [
       ...messages,
@@ -150,6 +161,14 @@ export default function Home() {
           </Button>
         </Stack>
       </Stack>
+      <Button
+        variant="contained"
+        size="large"
+        sx={{ whiteSpace: "nowrap", flexShrink: 0 }} // Ensured the button doesn't shrink
+        onClick={test}
+      >
+        Test
+      </Button>
     </Box>
   );
 }
