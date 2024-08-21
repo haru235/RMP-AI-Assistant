@@ -165,7 +165,7 @@ export async function POST(req) {
     console.log("Sample review:", reviews[0]);
 
     // Return the extracted information
-    return new NextResponse(JSON.stringify(profInfo), { status: 200 });
+    return new NextResponse(JSON.stringify({ profInfo, reviews }), { status: 200 });
   } catch (err) {
     console.error("An error occurred:", err.message);
     return new NextResponse("Error", { status: 500 });
