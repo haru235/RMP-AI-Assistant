@@ -125,11 +125,27 @@ export async function POST(req) {
                   ".CardNumRating__CardNumRatingNumber-sc-17t4b9u-2.cDKJcc"
                 )
                 ?.textContent.trim() || "No rating";
+                const course =
+              review
+                .querySelector(
+                  ".RatingHeader__StyledClass-sc-1dlkqw1-3.eXfReS"
+                )
+                ?.textContent.trim() || "No course";
+                const date =
+              review
+                .querySelector(
+                  ".TimeStamp__StyledTimeStamp-sc-9q2r30-0.bXQmMr.RatingHeader__RatingTimeStamp-sc-1dlkqw1-4.iwwYJD"
+                )
+                ?.textContent.trim() || "No date";
+                
+                
 
             return {
               content,
               quality: parseInt(quality, 10) || 0,
               difficulty: parseInt(difficulty, 10) || 0,
+              course,
+              date: date.replace(/(\d+)(st|nd|rd|th)/, '$1'),
             };
           });
         }, reviews.length, max);
@@ -202,6 +218,8 @@ async function insertIntoPinecone(reviews, profInfo) {
         review: review.content,
         subject: profInfo.dept,
         stars: review.quality,
+        course: review.course,
+        date: review.date,
         prof: profInfo.name,
         dept: profInfo.dept,
         school: profInfo.school,
