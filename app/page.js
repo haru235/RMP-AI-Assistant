@@ -4,13 +4,23 @@ import { Box, Button, Stack, TextField } from "@mui/material";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import SentimentChart from "./components/sentiment";
+import Chart from './components/Chart';
 
 export default function Home() {
+  const sentimentData = [
+    { year: '2018', sentimentScore: 0.1 },
+    { year: '2019', sentimentScore: 0.3 },
+    { year: '2020', sentimentScore: -0.2 },
+    { year: '2021', sentimentScore: 0.4 },
+    { year: '2022', sentimentScore: 0.5 },
+    { year: '2023', sentimentScore: 0.3 },
+  ];
   const [messages, setMessages] = useState([
     {
       role: "assistant",
       content:
-        "Hi! I'm the Rate My Professor support assistant. How can I help you taday?",
+        "Hi! I'm the Rate My Professor support assistant. How can I help you today?",
     },
   ]);
   const [message, setMessage] = useState("");
@@ -72,6 +82,7 @@ export default function Home() {
   };
 
   return (
+    <Box sx={{display: "flex",flexDirection:"column"}}>
     <Box
       sx={{
         width: "100vw",
@@ -198,6 +209,10 @@ export default function Home() {
           Test
         </Button>
       </Stack>
+      {/* <SentimentChart sentimentData={sentimentData} /> */}
+      
+      </Box>
+      <Chart />
     </Box>
   );
 }

@@ -125,9 +125,23 @@ export async function POST(req) {
                   ".CardNumRating__CardNumRatingNumber-sc-17t4b9u-2.cDKJcc"
                 )
                 ?.textContent.trim() || "No rating";
+            const date =
+                review
+                  .querySelector(
+                    ".TimeStamp__StyledTimeStamp-sc-9q2r30-0"
+                  )
+                  ?.textContent.trim() || "No date";
+            const classTaught =
+                review
+                    .querySelector(
+                      ".RatingHeader__StyledClass-sc-1dlkqw1-3"
+                    )
+                    ?.textContent.trim() || "No class";
 
             return {
               content,
+              date,
+              classTaught,
               quality: parseInt(quality, 10) || 0,
               difficulty: parseInt(difficulty, 10) || 0,
             };
@@ -171,6 +185,7 @@ export async function POST(req) {
 
     console.log("Scraping complete. Total reviews:", reviews.length);
     console.log("Sample review:", reviews[0]);
+    console.log(reviews)
 
     insertIntoPinecone(reviews, profInfo)
 
