@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Button, Stack, TextField } from "@mui/material";
+import { Box, Button, Stack, TextField, Typography } from "@mui/material";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -16,20 +16,23 @@ export default function Home() {
   const [message, setMessage] = useState("");
   const [professorUrl, setProfessorUrl] = useState("");
 
-  const test = async () => {
-    if (professorUrl.startsWith('https://www.ratemyprofessors.com/professor/')) {
-      setProfessorUrl('')
-      const url = 'https://www.ratemyprofessors.com/professor/835373'
-      const response = await fetch("/api/scrape", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ url: url, max: 5 }),
-      })
-    } else {
-      console.log('Invalid professor url');
-    }
+  const processProfessorUrls = async () => {
+    const urls = []
+    professorUrl.split('\n').forEach((url, _) => {
+      if (url.startsWith('https://www.ratemyprofessors.com/professor/')) {
+        urls.push(url)
+      } else {
+        console.log('Invalid Url: ', url)
+      }
+    });
+    setProfessorUrl('')
+    const response = await fetch("/api/scrape", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ urls: urls, max: 5 }),
+    })
   };
 
   const sendMessage = async () => {
@@ -181,21 +184,25 @@ export default function Home() {
           backgroundColor: "background.paper", // Consistent with theme
         }}
       >
+        <Typography>
+          Enter a list of professor urls, each on a separate line
+        </Typography>
         <TextField
-          label="Enter some text..."
+          label="Rate my professor urls..."
           variant="outlined"
           fullWidth
           sx={{ backgroundColor: "background.paper" }} // Consistent input background
           value={professorUrl}
           onChange={(e) => setProfessorUrl(e.target.value)}
+          multiline
         />
         <Button
           variant="contained"
           size="large"
           sx={{ whiteSpace: "nowrap", flexShrink: 0 }} // Ensured the button doesn't shrink
-          onClick={test}
+          onClick={processProfessorUrls}
         >
-          Test
+          {`Add Professor(s)`}
         </Button>
       </Stack>
     </Box>
