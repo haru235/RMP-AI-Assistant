@@ -1,17 +1,42 @@
 "use client";
 
 import { Box, Button, Stack, TextField } from "@mui/material";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import SentimentChart from "./components/sentiment";
 import Chart from './components/Chart';
+import ProfCard from './components/ProfCard'
 
 export default function Home() {
+    const [chartData, setChartData] = useState([]);
+    useEffect(() => {
+      fetch('/api/sentiment')
+        .then((response) => response.json())
+        .then((data) => setChartData(data))
+        .catch((error) => console.error('Error fetching sentiment data:', error));
+    }, []);
+    console.log("DSKFLSDJFKLS",chartData)
+
+    const data = [
+      {
+        date: '2024-08-01',
+        review: "The professor is amazing and really helps students understand the material."
+        // review: "the worst fucking professor ever I hate him"
+      },
+      {
+        date: '2024-08-02',
+        review: "The lectures are boring, and I struggled with the assignments."
+      },
+      {
+        date: '2024-08-03',
+        review: "Great professor, but the exams are too difficult."
+      }
+    ];
   const sentimentData = [
     { year: '2018', sentimentScore: 0.1 },
     { year: '2019', sentimentScore: 0.3 },
-    { year: '2020', sentimentScore: -0.2 },
+    { year: '2020', sentimentScore: -0.2},
     { year: '2021', sentimentScore: 0.4 },
     { year: '2022', sentimentScore: 0.5 },
     { year: '2023', sentimentScore: 0.3 },
@@ -37,6 +62,8 @@ export default function Home() {
         },
         body: JSON.stringify({ url: url, max: 5 }),
       })
+      const scrapedData = await response.json();
+      console.log("scraped data: ", scrapedData)
     } else {
       console.log('Invalid professor url');
     }
@@ -212,7 +239,9 @@ export default function Home() {
       {/* <SentimentChart sentimentData={sentimentData} /> */}
       
       </Box>
-      <Chart />
+
+      <ProfCard professorName="Dr. Something" chartData={chartData} />
+
     </Box>
   );
 }

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { Pinecone } from "@pinecone-database/pinecone";
 import OpenAI from "openai";
 
+
 export async function POST(req) {
   // url of professor's page
   const { url, max } = await req.json();
@@ -185,15 +186,35 @@ export async function POST(req) {
 
     console.log("Scraping complete. Total reviews:", reviews.length);
     console.log("Sample review:", reviews[0]);
-    console.log(reviews)
 
     insertIntoPinecone(reviews, profInfo)
+    console.log("AT SCRAPE: sending reviews to sentiment, ", reviews)
+    try {
 
+      // const sentimentResponse = await fetch('/api/sentiment', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(reviews),
+      // });
+      const sentimentResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/sentiment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ reviews }),
+    });
+
+      if (!sentimentResponse.ok) {
+        throw new Error(`Failed to fetch sentiment analysis: ${sentimentResponse.statusText}`);
+      }
+      const sentimentData = await sentimentResponse.json();
+      console.log("Sentiment analysis response:", sentimentData);
     // Return the extracted information
-    return new NextResponse(JSON.stringify({ profInfo }), { status: 200 });
-  } catch (err) {
-    console.error("An error occurred:", err.message);
-    return new NextResponse("Error", { status: 500 });
+    return new NextResponse(JSON.stringify({ profInfo, sentimentData }), { status: 200,headers: { 'Content-Type': 'application/json' }, });
+  } catch (error) {
+    console.error("Error sending reviews to sentiment analysis API:", error);
+    return new NextResponse('Internal Server Error', { status: 500 });
+  }
   } finally {
     // Ensure the browser is closed
     if (browser) {
@@ -234,3 +255,5 @@ async function generateEmbeddings(review, openai) {
   })
   return response.data[0].embedding
 }
+
+
