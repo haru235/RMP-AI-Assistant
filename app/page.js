@@ -1,19 +1,63 @@
-"use client";
+'use client';
 
-import { Box, Button, Stack, TextField } from "@mui/material";
+import { Box, Button, Stack, TextField, Typography } from "@mui/material";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import Markdown from 'markdown-to-jsx';
 
 export default function Home() {
+
+  const renderRecommendation = (recommendation) => (
+    <Box
+      key={recommendation.prof}
+      sx={{
+        mb: 2,
+        p: 2,
+        border: '1px solid',
+        borderRadius: 1,
+        backgroundColor: '#f9f9f9'
+      }}>
+      <Markdown options={{ forceBlock: true }}>
+        {`**Professor:** ${recommendation.prof}\n\n` +
+          `**Subject:** ${recommendation.subject}\n\n` +
+          `**Course:** ${recommendation.course}\n\n` +
+          `**School:** ${recommendation.school}\n\n` +
+          `**Date:** ${recommendation.date}\n\n` +
+          `**Rating:** ${recommendation.stars} / 5\n\n` +
+          `**Brief Review/Description:** ${recommendation.review}`}
+      </Markdown>
+    </Box>
+  );
+
   const [messages, setMessages] = useState([
     {
       role: "assistant",
       content:
-        "Hi! I'm the Rate My Professor support assistant. How can I help you taday?",
+        "Hi! I'm the Rate My Professor support assistant. How can I help you today?",
     },
   ]);
   const [message, setMessage] = useState("");
+  const [professorUrl, setProfessorUrl] = useState("");
+
+  const processProfessorUrls = async () => {
+    const urls = [];
+    professorUrl.split('\n').forEach((url, _) => {
+      if (url.startsWith('https://www.ratemyprofessors.com/professor/')) {
+        urls.push(url);
+      } else {
+        console.log('Invalid Url: ', url);
+      }
+    });
+    setProfessorUrl('');
+    const response = await fetch("/api/scrape", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ urls: urls, max: 5 }),
+    });
+  };
 
   const sendMessage = async () => {
     setMessages((messages) => [
@@ -60,6 +104,7 @@ export default function Home() {
         width: "100vw",
         height: "100vh",
         display: "flex",
+        flexDirection: { xs: "column", sm: "row" },
         justifyContent: "center",
         alignItems: "center",
         padding: 2,
@@ -68,7 +113,7 @@ export default function Home() {
     >
       <Stack
         sx={{
-          width: { xs: "100%", sm: "500px" }, // Improved responsiveness
+          width: { xs: "100%", sm: "500px" },
           maxWidth: "100%",
           height: "700px",
           border: "1px solid",
@@ -76,7 +121,7 @@ export default function Home() {
           borderRadius: 2,
           p: 2,
           boxShadow: 3,
-          backgroundColor: "background.paper", // Consistent with theme
+          backgroundColor: "background.paper",
         }}
       >
         <Stack
@@ -84,7 +129,7 @@ export default function Home() {
             flexGrow: 1,
             overflowY: "auto",
             spacing: 2,
-            padding: 1, // Added padding for better spacing
+            padding: 1,
           }}
         >
           {messages.map((message, index) => (
@@ -94,7 +139,7 @@ export default function Home() {
                 display: "flex",
                 justifyContent:
                   message.role === "assistant" ? "flex-start" : "flex-end",
-                mt: 1, // Added margin for better spacing between messages
+                mt: 1,
               }}
             >
               <Box
@@ -108,25 +153,32 @@ export default function Home() {
                   p: 2,
                   maxWidth: "70%",
                   overflowWrap: "break-word",
-                  boxShadow: 2, // Added shadow for a more polished look
+                  boxShadow: 2,
                 }}
               >
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  components={{
-                    ul: ({ node, ...props }) => (
-                      <Box component="ul" sx={{ pl: 4, mb: 1 }} {...props} />
-                    ),
-                    ol: ({ node, ...props }) => (
-                      <Box component="ol" sx={{ pl: 4, mb: 1 }} {...props} />
-                    ),
-                    li: ({ node, ...props }) => (
-                      <Box component="li" sx={{ mb: 0.5 }} {...props} />
-                    ),
-                  }}
-                >
-                  {message.content}
-                </ReactMarkdown>
+                {message.content.includes('Recommended professors based on your preferences:') ? (
+                  <>
+                    {message.content
+                      .split('Recommended professors based on your preferences:')[1]
+                      .trim()
+                      .split('\n\n')
+                      .filter(Boolean)
+                      .map((rec) => {
+                        const [professor, review, subject, stars, course, school, date] = rec.split(' - ').map(s => s.split(': ')[1]);
+                        return renderRecommendation({
+                          prof: professor,
+                          review: review,
+                          subject: subject,
+                          stars: stars,
+                          course: course,
+                          school: school,
+                          date: date,
+                        });
+                      })}
+                  </>
+                ) : (
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+                )}
               </Box>
             </Box>
           ))}
@@ -138,17 +190,54 @@ export default function Home() {
             fullWidth
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            sx={{ backgroundColor: "background.paper" }} // Consistent input background
+            sx={{ backgroundColor: "background.paper" }}
           />
           <Button
             variant="contained"
             size="large"
-            sx={{ whiteSpace: "nowrap", flexShrink: 0 }} // Ensured the button doesn't shrink
+            sx={{ whiteSpace: "nowrap", flexShrink: 0 }}
             onClick={sendMessage}
           >
             Send
           </Button>
         </Stack>
+      </Stack>
+      <Stack
+        spacing={2}
+        sx={{
+          width: "100%",
+          maxWidth: { xs: "100%", sm: "300px" },
+          height: "auto",
+          border: "1px solid",
+          borderColor: "divider",
+          borderRadius: 2,
+          p: 2,
+          boxShadow: 3,
+          backgroundColor: "background.paper",
+          mt: { xs: 2, sm: 0 },
+          ml: { xs: 0, sm: 2 },
+        }}
+      >
+        <Typography>
+          Enter a list of professor URLs, each on a separate line:
+        </Typography>
+        <TextField
+          label="Rate My Professor URLs..."
+          variant="outlined"
+          fullWidth
+          sx={{ backgroundColor: "background.paper" }}
+          value={professorUrl}
+          onChange={(e) => setProfessorUrl(e.target.value)}
+          multiline
+        />
+        <Button
+          variant="contained"
+          size="large"
+          sx={{ whiteSpace: "nowrap", flexShrink: 0 }}
+          onClick={processProfessorUrls}
+        >
+          {`Add Professor(s)`}
+        </Button>
       </Stack>
     </Box>
   );

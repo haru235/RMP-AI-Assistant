@@ -34,73 +34,133 @@ Examples:
 "For a Computer Science course, I recommend Dr. Alice Johnson, who has a 4.8-star rating. Students appreciate her 
 clear explanations and engaging lectures."
 "If you're looking for a professor in Economics, Prof. Michael Harris might be a good fit. He has a 4.5-star 
-rating, and students often mention his deep knowledge and practical insights.
+rating, and students often mention his deep knowledge and practical insights."
 `;
+
 export async function POST(req) {
   const data = await req.json();
 
   const pc = new Pinecone({
     apiKey: process.env.PINECONE_API_KEY,
   });
-  const index = pc.index("rag").namespace("ns1")
-  const openai = new OpenAI()
+  const index = pc.index("rag").namespace("ns2");  // Ensure you're querying the correct namespace
+  const openai = new OpenAI();
 
-  const text = data[data.length - 1].content
+  function extractProfessorName(query) {
+    const regex = /professor\s+([a-zA-Z\s]+)/i;
+    const match = query.match(regex);
+    return match ? match[1].trim() : null;
+  }
+
+  function extractSubject(query) {
+    const subjects = [
+      "computer science", "mathematics", "physics", "chemistry", "history",
+      "biology", "literature", "philosophy", "psychology", "economics",
+      "sociology", "engineering", "political science", "anthropology", "art history",
+      "environmental science", "music", "nursing", "business administration", "education", "law"
+    ];
+    for (let subject of subjects) {
+      if (query.includes(subject.toLowerCase())) {
+        return subject;
+      }
+    }
+    return null;
+  }
+
+  function extractRating(query) {
+    const regex = /rating\s+(above|greater than)\s+(\d)/i;
+    const match = query.match(regex);
+    return match ? parseInt(match[2], 10) : null;
+  }
+
+  // Extract query parameters
+  const query = data[data.length - 1].content.toLowerCase();
+  const professorName = extractProfessorName(query);
+  const subject = extractSubject(query);
+  const minRating = extractRating(query);
+
+  // Create an embedding from the user's query
   const embedding = await openai.embeddings.create({
     model: "text-embedding-3-small",
-    input: text,
+    input: query,
     encoding_format: 'float',
-  })
+  });
+
+  // Apply filters based on extracted query parameters
+  const filters = {};
+  if (professorName) filters["metadata.prof"] = professorName;
+  if (subject) filters["metadata.subject"] = subject;
+  if (minRating) filters["metadata.stars"] = { $gte: minRating };
 
   const results = await index.query({
-    topK: 3,
+    topK: 5,
     includeMetadata: true,
     vector: embedding.data[0].embedding,
-  })
+    filter: Object.keys(filters).length > 0 ? filters : undefined,
+  });
 
-  let resultString = '\n\nReturned results from vector db (done automatically): '
-  results.matches.forEach((match) => {
-    resultString += `\n
-    Professor: ${match.id}
-    Review: ${match.metadata.review}
-    Subject: ${match.metadata.subject}
-    Stars: ${match.metadata.stars}
-    \n\n
-    `
-  })
+  // Scoring and sorting results based on relevance
+  function calculateScore(metadata) {
+    let score = 0;
+    if (metadata.stars >= 4) score += 10;  // Higher rating = higher score
+    if (metadata.subject === subject) score += 20;  // Matching subject = higher score
+    if (metadata.prof === professorName) score += 30;  // Matching professor = highest score
+    return score;
+  }
 
-  const lastMessage = data[data.length - 1]
-  const lastMessageContent = lastMessage.content + resultString
-  const lastDataWithoutLastMessage = data.slice(0, data.length - 1)
+  const recommendations = results.matches.map(match => {
+    let score = calculateScore(match.metadata);
+    return { ...match.metadata, score };
+  });
+
+  recommendations.sort((a, b) => b.score - a.score);
+
+  let resultString = '\n\nRecommended professors based on your preferences: ';
+  recommendations.forEach((match) => {
+    resultString += `
+      Professor: ${match.prof}
+      Review: ${match.review}
+      Subject: ${match.subject}
+      Stars: ${match.stars}
+      Course: ${match.course}
+      School: ${match.school}
+      Date: ${match.date}
+      \n\n`;
+  });
+
+  // Prepare and send the response
+  const lastMessage = data[data.length - 1];
+  const lastMessageContent = lastMessage.content + resultString;
+  const lastDataWithoutLastMessage = data.slice(0, data.length - 1);
 
   const completion = await openai.chat.completions.create({
     messages: [
-        {role: 'system', content: systemPrompt},
-        ...lastDataWithoutLastMessage,
-        {role: 'user', content: lastMessageContent}
+      { role: 'system', content: systemPrompt },
+      ...lastDataWithoutLastMessage,
+      { role: 'user', content: lastMessageContent }
     ],
     model: "gpt-4o-mini",
     stream: true,
-  })
+  });
 
-  const stream =  new ReadableStream({
+  const stream = new ReadableStream({
     async start(controller) {
-        const encoder = new TextEncoder()
-        try {
-            for await (const chunk of completion) {
-                const content = chunk.choices[0]?.delta?.content
-                if (content) {
-                    const text = encoder.encode(content)
-                    controller.enqueue(text)
-                }
-            }
-        } catch(err) {
-            controller.error(err)
-        } finally {
-            controller.close();
+      const encoder = new TextEncoder();
+      try {
+        for await (const chunk of completion) {
+          const content = chunk.choices[0]?.delta?.content;
+          if (content) {
+            const text = encoder.encode(content);
+            controller.enqueue(text);
+          }
         }
+      } catch (err) {
+        controller.error(err);
+      } finally {
+        controller.close();
+      }
     }
-  })
+  });
 
-  return new NextResponse(stream)
+  return new NextResponse(stream);
 }
