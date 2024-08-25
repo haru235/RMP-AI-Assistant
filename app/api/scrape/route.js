@@ -5,6 +5,7 @@ import OpenAI from "openai";
 
 
 export async function POST(req) {
+  console.log('PINECONE_API_KEY:', process.env.OPENAI_API_KEY);
   // url of professor's page
   const { url, max } = await req.json();
   console.log(`Received URL: ${url}`);
@@ -23,12 +24,13 @@ export async function POST(req) {
 
     // Navigate to the provided URL
     console.log(`Navigating to URL: ${url}`);
-    await page.goto(url, { waitUntil: "networkidle2" });
+    await page.goto(url, { waitUntil: "networkidle2", timeout: 60000 });
+    await page.setJavaScriptEnabled(false);
 
     // Wait for the necessary selector to appear
     console.log("Waiting for the teacher information selector...");
     await page.waitForSelector(".TeacherInfo__StyledTeacher-ti1fio-1.kFNvIp", {
-      timeout: 5000,
+      timeout: 10000,
     });
 
     // RMP shows a popup on first open
@@ -37,7 +39,7 @@ export async function POST(req) {
       // find the close button
       await page.waitForSelector(
         ".Buttons__Button-sc-19xdot-1.CCPAModal__StyledCloseButton-sc-10x9kq-2.eAIiLw",
-        { timeout: 5000 }
+        { timeout: 10000 }
       );
       // click the button
       console.log("Cookie consent popup detected. Accepting...");
@@ -97,7 +99,7 @@ export async function POST(req) {
     while (true) {
       try {
         // Wait for the reviews section to be available
-        await page.waitForSelector(".RatingsList__RatingsUL-hn9one-0.cbdtns", { timeout: 5000 });
+        await page.waitForSelector(".RatingsList__RatingsUL-hn9one-0.cbdtns", { timeout: 10000 });
         console.log("Ratings list found. Scraping reviews...");
 
         // Scrape reviews on the current page
@@ -172,7 +174,7 @@ export async function POST(req) {
           await loadMoreButton.click();
           await page.waitForFunction(
             () => !document.querySelector('.Buttons__Button-sc-19xdot-1.PaginationButton__StyledPaginationButton-txi1dr-1.glImpo'),
-            { timeout: 5000 }
+            { timeout: 10000 }
           );
         } else {
           console.log("No Load More button found. Exiting...");
@@ -210,7 +212,7 @@ export async function POST(req) {
       const sentimentData = await sentimentResponse.json();
       console.log("Sentiment analysis response:", sentimentData);
     // Return the extracted information
-    return new NextResponse(JSON.stringify({ profInfo, sentimentData }), { status: 200,headers: { 'Content-Type': 'application/json' }, });
+    return new NextResponse(JSON.stringify({ profInfo, reviews, sentimentData }), { status: 200,headers: { 'Content-Type': 'application/json' }, });
   } catch (error) {
     console.error("Error sending reviews to sentiment analysis API:", error);
     return new NextResponse('Internal Server Error', { status: 500 });
@@ -226,7 +228,7 @@ export async function POST(req) {
 
 async function insertIntoPinecone(reviews, profInfo) {
   const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY })
-  const openai = new OpenAI()
+  const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY})
   const processed_reviews = []
   for (const [index, review] of reviews.entries()) {
     const embedText = `${profInfo.name} at ${profInfo.school} for ${profInfo.dept}: ${review.content}`

@@ -4,44 +4,18 @@ import { Box, Button, Stack, TextField } from "@mui/material";
 import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import SentimentChart from "./components/sentiment";
-import Chart from './components/Chart';
+// import SentimentChart from "./components/sentiment";
+// import Chart from './components/Chart';
 import ProfCard from './components/ProfCard'
 
 export default function Home() {
     const [chartData, setChartData] = useState([]);
-    useEffect(() => {
-      fetch('/api/sentiment')
-        .then((response) => response.json())
-        .then((data) => setChartData(data))
-        .catch((error) => console.error('Error fetching sentiment data:', error));
-    }, []);
-    console.log("DSKFLSDJFKLS",chartData)
+    const [loading, setLoading] = useState(null);
+    const [reviews, setReviews ] = useState([]);
+    const [profInfo, setProfInfo] = useState([]);
+    const [showCard, setShowCard] = useState(false);
+    const [messages, setMessages] = useState([
 
-    const data = [
-      {
-        date: '2024-08-01',
-        review: "The professor is amazing and really helps students understand the material."
-        // review: "the worst fucking professor ever I hate him"
-      },
-      {
-        date: '2024-08-02',
-        review: "The lectures are boring, and I struggled with the assignments."
-      },
-      {
-        date: '2024-08-03',
-        review: "Great professor, but the exams are too difficult."
-      }
-    ];
-  const sentimentData = [
-    { year: '2018', sentimentScore: 0.1 },
-    { year: '2019', sentimentScore: 0.3 },
-    { year: '2020', sentimentScore: -0.2},
-    { year: '2021', sentimentScore: 0.4 },
-    { year: '2022', sentimentScore: 0.5 },
-    { year: '2023', sentimentScore: 0.3 },
-  ];
-  const [messages, setMessages] = useState([
     {
       role: "assistant",
       content:
@@ -53,17 +27,21 @@ export default function Home() {
 
   const test = async () => {
     if (professorUrl.startsWith('https://www.ratemyprofessors.com/professor/')) {
-      setProfessorUrl('')
-      const url = 'https://www.ratemyprofessors.com/professor/835373'
+      // setProfessorUrl('')
+      // const url = 'https://www.ratemyprofessors.com/professor/835373'
       const response = await fetch("/api/scrape", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ url: url, max: 5 }),
+        body: JSON.stringify({ url: professorUrl, max: 5 }),
       })
       const scrapedData = await response.json();
       console.log("scraped data: ", scrapedData)
+      setChartData(scrapedData.sentimentData)
+      setReviews(scrapedData.reviews)
+      setProfInfo(scrapedData.profInfo)
+      console.log("JKSDLFJSKLD<", scrapedData.sentimentData)
     } else {
       console.log('Invalid professor url');
     }
@@ -76,38 +54,38 @@ export default function Home() {
       { role: "assistant", content: "" },
     ]);
     setMessage("");
-
-    const response = await fetch("/api/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify([...messages, { role: "user", content: message }]),
-    }).then(async (res) => {
-      const reader = res.body.getReader();
+  
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify([...messages, { role: "user", content: message }]),
+      });
+  
+      const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let result = "";
-
-      return reader.read().then(function processText({ done, value }) {
-        if (done) {
-          return result;
-        }
-        const text = decoder.decode(value || new Uint8Array(), {
-          stream: true,
-        });
+  
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        result += decoder.decode(value, { stream: true });
+  
         setMessages((messages) => {
-          let lastMessage = messages[messages.length - 1];
-          let otherMessages = messages.slice(0, messages.length - 1);
+          const lastMessage = messages[messages.length - 1];
+          const otherMessages = messages.slice(0, messages.length - 1);
           return [
             ...otherMessages,
-            { ...lastMessage, content: lastMessage.content + text },
+            { ...lastMessage, content: lastMessage.content + result },
           ];
         });
-        return reader.read().then(processText);
-      });
-    });
+      }
+    } catch (error) {
+      console.error("Error while sending message:", error);
+    }
   };
-
   return (
     <Box sx={{display: "flex",flexDirection:"column"}}>
     <Box
@@ -239,8 +217,13 @@ export default function Home() {
       {/* <SentimentChart sentimentData={sentimentData} /> */}
       
       </Box>
-
-      <ProfCard professorName="Dr. Something" chartData={chartData} />
+      {showCard ? (
+        <ProfCard profInfo={profInfo} reviews={reviews} chartData={chartData} />
+      ) : (
+        <Button onClick={() => setShowCard(true)}>
+          Show Professor Card for More Info
+        </Button>
+      )}
 
     </Box>
   );
