@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Button, Stack, TextField, Typography, Typography } from "@mui/material";
+import { Box, Button, Stack, TextField, Typography } from "@mui/material";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
