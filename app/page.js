@@ -218,7 +218,12 @@ export default function Home() {
       
       </Box>
       {showCard ? (
+        <div>
+        <Button onClick={() => setShowCard(false)}>
+        Hide Professor Card
+      </Button>
         <ProfCard profInfo={profInfo} reviews={reviews} chartData={chartData} />
+        </div>
       ) : (
         <Button onClick={() => setShowCard(true)}>
           Show Professor Card for More Info
