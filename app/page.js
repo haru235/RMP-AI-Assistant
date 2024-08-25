@@ -25,8 +25,39 @@ export default function Home() {
   const [message, setMessage] = useState("");
   const [professorUrl, setProfessorUrl] = useState("");
 
+  const fetchProfessorData = async () => {
+    const schoolName='michigan state'
+    const firstName="dan"
+    const lastName="thaler"
+    setLoading(true); // Set loading state to true
+    try {
+      const response = await fetch("/api/profFind", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ schoolName, firstName, lastName }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Fetched professor data: ", data);
+    //   if (data.professorPageUrl) {
+    //     setProfessorUrl(data.professorPageUrl);
+    //     test(); // Call test() to scrape data from the professor page URL
+    // }
+    } catch (error) {
+      console.error('Error fetching professor data:', error);
+    } finally {
+      setLoading(false); // Set loading state to false
+    }
+  };
+
   const test = async () => {
-    if (professorUrl.startsWith('https://www.ratemyprofessors.com/professor/')) {
+    if (professorUrl.startsWith('https://www.ratemy .com/professor/')) {
       // setProfessorUrl('')
       // const url = 'https://www.ratemyprofessors.com/professor/835373'
       const response = await fetch("/api/scrape", {
@@ -217,6 +248,7 @@ export default function Home() {
       {/* <SentimentChart sentimentData={sentimentData} /> */}
       
       </Box>
+      <Button onClick={() => fetchProfessorData()}>press here</Button>
       {showCard ? (
         <div>
         <Button onClick={() => setShowCard(false)}>
