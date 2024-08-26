@@ -1,4 +1,5 @@
 import puppeteer from "puppeteer";
+import { NextResponse } from "next/server";
 
 export async function POST(req) {
     console.log("DEPARTMENT SCRAPE");
@@ -45,17 +46,21 @@ export async function POST(req) {
         }
 
         // Wait a bit to ensure the selection is processed
-        await page.waitForSelector(".TeacherCard__StyledTeacherCard-syjs0d-0 dLJIlx", { timeout: 60000 });
+        await page.waitForSelector(".TeacherCard__StyledTeacherCard-syjs0d-0.dLJIlx", { timeout: 60000 });
         console.log("done waiting")
         const professorName = await page.evaluate(() => {
-            const firstProfessor = document.querySelector('.CardName__StyledCardName-sc-1gyrgim-0 cJdVEK'); // Replace with the actual class or selector
+            const firstProfessor = document.querySelector('.CardName__StyledCardName-sc-1gyrgim-0.cJdVEK'); // Replace with the actual class or selector
             return firstProfessor ? firstProfessor.innerText : 'No professor found';
-          });
-          
-          console.log(`First professor's name: ${professorName}`);
+        });
+
+        console.log(`First professor's name: ${professorName}`);
+        return new NextResponse('Department scraped successfully', { status: 200 });
+
 
     } catch (err) {
         console.error('Error occurred:', err);
+        return new NextResponse('Error scraping department', { status: 500 });
+
     } finally {
         if (browser) {
             console.log("Closing browser...");

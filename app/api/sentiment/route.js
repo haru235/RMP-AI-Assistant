@@ -44,6 +44,9 @@ export async function POST(req) {
       sentiment_score: sentimentScores[index]
     }));
 
+    // Sort the analyzedData by date
+    analyzedData.sort((a, b) => new Date(a.date) - new Date(b.date));
+
     console.log("analyzed Data", analyzedData);
 
     // Return JSON response
