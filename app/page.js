@@ -4,8 +4,6 @@ import { Box, Button, Stack, TextField, Typography } from "@mui/material";
 import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-// import SentimentChart from "./components/sentiment";
-// import Chart from './components/Chart';
 import ProfCard from './components/ProfCard'
 import Markdown from 'markdown-to-jsx';
 
@@ -80,8 +78,20 @@ export default function Home() {
     }
   };
 
+  const testDepScrape = async () => {
+    const url = professorUrl
+    const response = await fetch("/api/departmentScraper", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      // body: JSON.stringify({ urls: urls, max: 5 }),
+      body: JSON.stringify({ url: url, max: 5 }),
+    });
+  }
+
   const processProfessorUrls = async () => {
-    const urls = [];
+    const urls = [professorUrl];
     professorUrl.split('\n').forEach((url, _) => {
       if (url.startsWith('https://www.ratemyprofessors.com/professor/')) {
         urls.push(url);
@@ -90,13 +100,27 @@ export default function Home() {
       }
     });
     setProfessorUrl('');
-    const response = await fetch("/api/scrape", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ urls: urls, max: 5 }),
-    });
+    try {
+      const response = await fetch("/api/scrape", {
+          method: "POST",
+          headers: {
+              "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ urls: urls, max: 5 }),
+      });
+
+      if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const responseData = await response.json();
+      console.log("Response Data:", responseData);
+      setReviews(responseData.reviews)
+      setProfInfo(responseData.profInfo)
+      setChartData(responseData.sentimentData)
+  } catch (error) {
+      console.error("Error fetching from /api/scrape:", error);
+  }
   };
 
   const sendMessage = async () => {
@@ -280,7 +304,43 @@ export default function Home() {
           {`Add Professor(s)`}
         </Button>
       </Stack>
-      {/* <SentimentChart sentimentData={sentimentData} /> */}
+      <Stack
+        spacing={2}
+        sx={{
+          width: "100%",
+          maxWidth: { xs: "100%", sm: "300px" },
+          height: "auto",
+          border: "1px solid",
+          borderColor: "divider",
+          borderRadius: 2,
+          p: 2,
+          boxShadow: 3,
+          backgroundColor: "background.paper",
+          mt: { xs: 2, sm: 0 },
+          ml: { xs: 0, sm: 2 },
+        }}
+      >
+        <Typography>
+          Enter this https://www.ratemyprofessors.com/search/professors/250?q=*
+        </Typography>
+        <TextField
+          label="Rate My Professor URLs..."
+          variant="outlined"
+          fullWidth
+          sx={{ backgroundColor: "background.paper" }}
+          value={professorUrl}
+          onChange={(e) => setProfessorUrl(e.target.value)}
+          multiline
+        />
+        <Button
+          variant="contained"
+          size="large"
+          sx={{ whiteSpace: "nowrap", flexShrink: 0 }}
+          onClick={testDepScrape}
+        >
+          {`Add Professor(s)`}
+        </Button>
+      </Stack>
       
       </Box>
       <Button onClick={() => fetchProfessorData()}>press here</Button>

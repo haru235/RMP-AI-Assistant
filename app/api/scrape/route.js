@@ -5,7 +5,6 @@ import OpenAI from "openai";
 
 
 export async function POST(req) {
-  console.log('PINECONE_API_KEY:', process.env.OPENAI_API_KEY);
   // url of professor's page
   const { urls, max } = await req.json();
   urls.forEach(url => {
@@ -14,17 +13,18 @@ export async function POST(req) {
   console.log(`Max reviews for each professor: ${max}`);
 
   let browser;
+  let page;
+
 
   try {
     // Launch Puppeteer
     console.log("Launching browser...");
-    browser = await puppeteer.launch({ headless: true });
+    browser = await puppeteer.launch({ headless: false });
+    page = await browser.newPage(); // Initialize page
 
     const profInfos = []
 
-    // Open a new page
-    console.log(`Opening new page...`);
-    const page = await browser.newPage();
+  
 
     for (const [index, url] of urls.entries()) {
 
