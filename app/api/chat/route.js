@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { Pinecone } from "@pinecone-database/pinecone";
 import OpenAI from "openai";
-
+const collegeSearch = `https://www.ratemyprofessors.com/search/schools?q=michigan%20state`
+const getID = `https://www.ratemyprofessors.com/school/601`
+const gather = `https://www.ratemyprofessors.com/search/professors/${schoolID}?q=${fname}%20${lname}`
 const systemPrompt = `
 You are a helpful and knowledgeable assistant for students seeking information on professors. 
 Your job is to understand their queries and provide the top 3 professor recommendations based on their preferences, 

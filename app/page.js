@@ -1,13 +1,21 @@
 'use client';
 
 import { Box, Button, Stack, TextField, Typography } from "@mui/material";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+// import SentimentChart from "./components/sentiment";
+// import Chart from './components/Chart';
+import ProfCard from './components/ProfCard'
 import Markdown from 'markdown-to-jsx';
 
 export default function Home() {
-
+    const [chartData, setChartData] = useState([]);
+    const [loading, setLoading] = useState(null);
+    const [reviews, setReviews ] = useState([]);
+    const [profInfo, setProfInfo] = useState([]);
+    const [showCard, setShowCard] = useState(false);
+  
   const renderRecommendation = (recommendation) => (
     <Box
       key={recommendation.prof}
@@ -31,6 +39,7 @@ export default function Home() {
   );
 
   const [messages, setMessages] = useState([
+
     {
       role: "assistant",
       content:
@@ -39,6 +48,37 @@ export default function Home() {
   ]);
   const [message, setMessage] = useState("");
   const [professorUrl, setProfessorUrl] = useState("");
+
+  const fetchProfessorData = async () => {
+    const schoolName='michigan state'
+    const firstName="dan"
+    const lastName="thaler"
+    setLoading(true); // Set loading state to true
+    try {
+      const response = await fetch("/api/profFind", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ schoolName, firstName, lastName }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Fetched professor data: ", data);
+    //   if (data.professorPageUrl) {
+    //     setProfessorUrl(data.professorPageUrl);
+    //     test(); // Call test() to scrape data from the professor page URL
+    // }
+    } catch (error) {
+      console.error('Error fetching professor data:', error);
+    } finally {
+      setLoading(false); // Set loading state to false
+    }
+  };
 
   const processProfessorUrls = async () => {
     const urls = [];
@@ -66,39 +106,40 @@ export default function Home() {
       { role: "assistant", content: "" },
     ]);
     setMessage("");
-
-    const response = await fetch("/api/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify([...messages, { role: "user", content: message }]),
-    }).then(async (res) => {
-      const reader = res.body.getReader();
+  
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify([...messages, { role: "user", content: message }]),
+      });
+  
+      const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let result = "";
-
-      return reader.read().then(function processText({ done, value }) {
-        if (done) {
-          return result;
-        }
-        const text = decoder.decode(value || new Uint8Array(), {
-          stream: true,
-        });
+  
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        result += decoder.decode(value, { stream: true });
+  
         setMessages((messages) => {
-          let lastMessage = messages[messages.length - 1];
-          let otherMessages = messages.slice(0, messages.length - 1);
+          const lastMessage = messages[messages.length - 1];
+          const otherMessages = messages.slice(0, messages.length - 1);
           return [
             ...otherMessages,
-            { ...lastMessage, content: lastMessage.content + text },
+            { ...lastMessage, content: lastMessage.content + result },
           ];
         });
-        return reader.read().then(processText);
-      });
-    });
+      }
+    } catch (error) {
+      console.error("Error while sending message:", error);
+    }
   };
-
   return (
+    <Box sx={{display: "flex",flexDirection:"column"}}>
     <Box
       sx={{
         width: "100vw",
@@ -239,6 +280,23 @@ export default function Home() {
           {`Add Professor(s)`}
         </Button>
       </Stack>
+      {/* <SentimentChart sentimentData={sentimentData} /> */}
+      
+      </Box>
+      <Button onClick={() => fetchProfessorData()}>press here</Button>
+      {showCard ? (
+        <div>
+        <Button onClick={() => setShowCard(false)}>
+        Hide Professor Card
+      </Button>
+        <ProfCard profInfo={profInfo} reviews={reviews} chartData={chartData} />
+        </div>
+      ) : (
+        <Button onClick={() => setShowCard(true)}>
+          Show Professor Card for More Info
+        </Button>
+      )}
+
     </Box>
   );
 }
