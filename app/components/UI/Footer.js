@@ -6,7 +6,7 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center justify-between sm:flex-row">
           <p className="text-sm text-center sm:text-left">
-            © {new Date().getFullYear()} Your Company. All rights reserved.
+            © {new Date().getFullYear()} ProfAI. All rights reserved.
           </p>
           <div className="mt-4 sm:mt-0">
             <a href="/privacy-policy" className="text-sm text-gray-400 hover:text-white ml-4">
