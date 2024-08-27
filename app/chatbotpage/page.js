@@ -7,7 +7,12 @@ import remarkGfm from "remark-gfm";
 import ProfCard from '../components/ProfCard'
 import Markdown from 'markdown-to-jsx';
 
+import Header from "../components/UI/Header";
+import Footer from "../components/UI/Footer";
+
 export default function ChatbotPage() {
+
+
     const [chartData, setChartData] = useState([]);
     const [loading, setLoading] = useState(null);
     const [reviews, setReviews ] = useState([]);
@@ -163,6 +168,8 @@ export default function ChatbotPage() {
     }
   };
   return (
+    <>
+    <Header />
     <Box sx={{display: "flex",flexDirection:"column"}}>
     <Box
       sx={{
@@ -358,5 +365,7 @@ export default function ChatbotPage() {
       )}
 
     </Box>
+    <Footer />
+    </>
   );
 }
