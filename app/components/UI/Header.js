@@ -8,9 +8,9 @@ export default function Header() {
 
         <header className="flex items-center justify-between px-10 py-5">
             <div className="flex items-center gap-20">
-                <div>
+                <Link href="./">
                     <Image width={100} height={100} src="images/Block.svg" />
-                </div>
+                </Link>
                 <nav>
                     <ul className="flex items-center gap-5">
                         <Link href="/chatbotpage">ProfChat</Link>
